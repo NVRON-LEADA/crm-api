@@ -8,10 +8,12 @@ const amazonRoutes = require('./routes/Amazon');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
 
-// SNS messages sometimes sent as plain text
+// Only for SNS route: parse as text
 app.use('/api/ses/notifications', bodyParser.text({ type: '*/*' }));
+
+// For all other routes, parse JSON normally
+app.use(bodyParser.json());
 
 // Mount routes
 app.use('/api', amazonRoutes);
@@ -20,7 +22,8 @@ app.use('/api', amazonRoutes);
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log('MongoDB connected'))
+})
+  .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 const PORT = process.env.PORT || 5000;
