@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fetch = global.fetch; // Node 18+ has fetch globally
 
-router.post("/api/ses/notifications", async (req, res) => {
+router.post("/ses/notifications", async (req, res) => {
   try {
     const messageType = req.header("x-amz-sns-message-type");
 
