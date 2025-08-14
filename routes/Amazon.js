@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-router.post("/api/ses/notifications", async (req, res) => {
+const fetch = global.fetch; // Node 18+ has fetch globally
+
+router.post("/", async (req, res) => {
   try {
     const messageType = req.header("x-amz-sns-message-type");
 
@@ -8,7 +10,7 @@ router.post("/api/ses/notifications", async (req, res) => {
       const { SubscribeURL } = req.body;
       if (SubscribeURL) {
         console.log("Confirming subscription with:", SubscribeURL);
-        await fetch(SubscribeURL);
+        await fetch(SubscribeURL); // native fetch
         return res.status(200).send("Subscription confirmed");
       }
     }
@@ -23,13 +25,13 @@ router.post("/api/ses/notifications", async (req, res) => {
 
       console.log("Received SNS Notification:", messageContent);
 
-      if (messageContent.notificationType === "Bounce") {
+      if (messageContent?.notificationType === "Bounce") {
         messageContent.bounce.bouncedRecipients.forEach((recipient) => {
           console.log("Bounced email:", recipient.emailAddress);
         });
       }
 
-      if (messageContent.notificationType === "Complaint") {
+      if (messageContent?.notificationType === "Complaint") {
         messageContent.complaint.complainedRecipients.forEach((recipient) => {
           console.log("Complaint email:", recipient.emailAddress);
         });
@@ -42,6 +44,5 @@ router.post("/api/ses/notifications", async (req, res) => {
     res.status(500).send("Error");
   }
 });
-
 
 module.exports = router;
