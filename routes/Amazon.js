@@ -1,37 +1,47 @@
 const express = require('express');
 const router = express.Router();
+router.post("/api/ses/notifications", async (req, res) => {
+  try {
+    const messageType = req.header("x-amz-sns-message-type");
 
-router.post('/ses/notifications', express.json({ type: '*/*' }), (req, res) => {
-    const messageType = req.headers['x-amz-sns-message-type'];
-    const message = req.body;
+    if (messageType === "SubscriptionConfirmation") {
+      const { SubscribeURL } = req.body;
+      if (SubscribeURL) {
+        console.log("Confirming subscription with:", SubscribeURL);
+        await fetch(SubscribeURL);
+        return res.status(200).send("Subscription confirmed");
+      }
+    }
 
-    console.log("Received SNS message:", messageType, message);
+    if (messageType === "Notification") {
+      let messageContent = req.body.Message;
+      try {
+        messageContent = JSON.parse(req.body.Message);
+      } catch (err) {
+        // Not JSON, keep as string
+      }
 
-    // Step 1: Handle subscription confirmation
-    if (messageType === 'SubscriptionConfirmation') {
-        console.log("Subscription confirmation received");
-        const https = require('https');
-        https.get(message.SubscribeURL, (response) => {
-            console.log('Subscription confirmed:', response.statusCode);
+      console.log("Received SNS Notification:", messageContent);
+
+      if (messageContent.notificationType === "Bounce") {
+        messageContent.bounce.bouncedRecipients.forEach((recipient) => {
+          console.log("Bounced email:", recipient.emailAddress);
         });
+      }
+
+      if (messageContent.notificationType === "Complaint") {
+        messageContent.complaint.complainedRecipients.forEach((recipient) => {
+          console.log("Complaint email:", recipient.emailAddress);
+        });
+      }
     }
 
-    // Step 2: Handle actual notifications from SES
-    if (messageType === 'Notification') {
-        const notification = JSON.parse(message.Message);
-        console.log("SES Notification:", notification);
-
-        // Example: Check if it's a bounce or complaint
-        if (notification.notificationType === 'Bounce') {
-            console.log("Bounce detected for:", notification.bounce.bouncedRecipients);
-        } else if (notification.notificationType === 'Complaint') {
-            console.log("Complaint detected for:", notification.complaint.complainedRecipients);
-        } else {
-            console.log("Delivery:", notification.delivery);
-        }
-    }
-
-    res.sendStatus(200);
+    res.status(200).send("OK");
+  } catch (err) {
+    console.error("Error processing SNS message:", err);
+    res.status(500).send("Error");
+  }
 });
+
 
 module.exports = router;
