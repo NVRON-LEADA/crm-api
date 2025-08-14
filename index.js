@@ -9,10 +9,10 @@ const amazonRoutes = require('./routes/Amazon');
 const app = express();
 app.use(cors());
 
-// Only for SNS route: parse as text
+// SNS messages sent as text/plain or JSON
 app.use('/api/ses/notifications', bodyParser.text({ type: '*/*' }));
 
-// For all other routes, parse JSON normally
+// Other routes use JSON
 app.use(bodyParser.json());
 
 // Mount routes
